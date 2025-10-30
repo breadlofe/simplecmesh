@@ -8,8 +8,8 @@
 #define BPORTPKTS				1
 
 #define CONC					(1)
-#define XNUMPERDIM				(2)
-#define YNUMPERDIM				(2)
+#define XNUMPERDIM				(8)
+#define YNUMPERDIM				(8)
 #define ZNUMPERDIM				(2)
 #define MAX_ROUTERS				(XNUMPERDIM*YNUMPERDIM)
 #define MAX_ROUTERS_3D		    (XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM)
@@ -17,6 +17,7 @@
 #define MAX_CPU_3D				(MAX_ROUTERS_3D*CONC)
 #define RADIX					(4+CONC)
 #define RADIX_3D				(6+CONC)
+#define RADIX_FB				(XNUMPERDIM-1 + YNUMPERDIM-1 + CONC)
 #define DIMENSION1				(4)			//power of 2 required to reach max_nodes
 
 /************************************************************************************/
