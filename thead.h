@@ -16,6 +16,7 @@
 #define MAX_CPU					(MAX_ROUTERS*CONC)
 #define MAX_CPU_3D				(MAX_ROUTERS_3D*CONC)
 #define RADIX					(4+CONC)
+#define RADIX_3D				(6+CONC)
 #define DIMENSION1				(4)			//power of 2 required to reach max_nodes
 
 /************************************************************************************/

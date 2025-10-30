@@ -61,12 +61,12 @@ struct SWITCHSET{
 	int ycord;							/* y co-ordinate of the group				*/
 	int zcord;
 	int switchid;						/* ID of the switch							*/
-	BUFFER *input_buffer[(VC)*(RADIX)];	/* Input Buffers of the switch (VC)			*/
-	BUFFER *output_buffer[RADIX];		/* Output Buffer of the switch				*/
-	MUX *input_mux[RADIX];				/* Input Multiplexer (Route_MUX)			*/
-	MUX *output_mux[RADIX];				/* Output Multiplexer (Regular_MUX)			*/
-	DEMUX *input_demux[RADIX];			/* Input Demultiplexer (Look-Ahead Router)	*/
-	DEMUX *output_demux[RADIX];			/* Input Demultiplexer (Regular Router)		*/
+	BUFFER *input_buffer[(VC)*(RADIX_3D)];	/* Input Buffers of the switch (VC)			*/
+	BUFFER *output_buffer[RADIX_3D];		/* Output Buffer of the switch				*/
+	MUX *input_mux[RADIX_3D];				/* Input Multiplexer (Route_MUX)			*/
+	MUX *output_mux[RADIX_3D];				/* Output Multiplexer (Regular_MUX)			*/
+	DEMUX *input_demux[RADIX_3D];			/* Input Demultiplexer (Look-Ahead Router)	*/
+	DEMUX *output_demux[RADIX_3D];			/* Input Demultiplexer (Regular Router)		*/
 	IPORT *iport[CONC];					/* Input port to the node					*/
 	OPORT *oport[CONC];					/* Output port to the node					*/
 };
@@ -93,7 +93,7 @@ int id;
 	int src_router, src_xoffset, src_yoffset, src_zoffset;
 	int xidentity, diff, pos_skip, neg_skip;
 
-	current_router = id/((2)*(RADIX));
+	current_router = id/((2)*(RADIX_3D));
 	cur_xoffset = FindXcord(current_router);
 	cur_yoffset = FindYcord(current_router);
 	cur_zoffset = FindZcord(current_router);
@@ -419,7 +419,7 @@ char** argv;
 	  printf("\n***********HYPERCUBE***********\n");
 	  printf("Maximum number of nodes %d\n", MAX_CPU_3D);
 	  printf("Maximum number of Routers %d\n", MAX_ROUTERS_3D);
-	  printf("Radix of the network %d\n", RADIX);
+	  printf("Radix of the network %d\n", RADIX_3D);
 
     switch(Traffic)
     {
@@ -594,6 +594,7 @@ char** argv;
 	NetworkCollectStats(MOVETIME,NOHIST,0.0,0.0);
 	NetworkCollectStats(LIFETIME,NOHIST,0.0,0.0);
 	printf("net stuff...\n");
+	printf("%d",RADIX_3D);
 
 	DriverRun(0.0);  // Start the simulation, on return simulation is complete
 	printf("driver stuff...\n");
@@ -656,7 +657,7 @@ char** argv;
 	// Print to readable file
 	fprintf(fp, "****************** Start *************************\n");
 	fprintf(fp, "Max CPUs = %d\n", MAX_CPU_3D);
-	fprintf(fp, "Radix = %d\n", RADIX);
+	fprintf(fp, "Radix = %d\n", RADIX_3D);
 	fprintf(fp, "CONC = %d\n\n", CONC);
 	fprintf(fp, "Traffic = %d\n", Traffic);
 	fprintf(fp, "Packet Size = %d\n", pktsz);
@@ -738,37 +739,37 @@ void intraconnections(int index)
 	//printf("index %d xcord %d, ycord %d\n", index, switches[index].xcord, switches[index].ycord);
 
 	/* Look-Ahead Routing Demuxes */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_3D); i++ )
 	{
 		demux0 = NewDemux(demuxnum++, VC, router, LOOKAHEAD_DEMUX );
 		switches[index]->input_demux[i] = demux0;
 	}
 
 	/* Regular Routing Demuxes (RC) */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_3D); i++ )
 	{
-		demux0 = NewDemux(demuxnum++, RADIX, router, REGULAR_DEMUX );
+		demux0 = NewDemux(demuxnum++, RADIX_3D, router, REGULAR_DEMUX );
 		switches[index]->output_demux[i] = demux0;
 	}
 
 	/* Routing/Virtual Channel Allocating Muxes (VA)  */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_3D); i++ )
 	{
 		mux0 = NewMux(muxnum++, VC, VIRTUAL_ALLOC_MUX );
 		switches[index]->input_mux[i] = mux0;
 	}
 
 	/* Switch Allocating Muxes (SA)  */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_3D); i++ )
 	{
-		mux0 = NewMux(muxnum++, RADIX, SWITCH_ALLOC_MUX );
+		mux0 = NewMux(muxnum++, RADIX_3D, SWITCH_ALLOC_MUX );
 		switches[index]->output_mux[i] = mux0;
 	}
 
 	/***************************************************/
 	/* Intra-Switch Connections: Component Connections */
 	k = 0;
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_3D); i++ )
 	{
 		for( j = 0; j < (VC); j++ )
 		{
@@ -792,9 +793,9 @@ void intraconnections(int index)
 	}
 
 	/* Intra-Switch Connections: Switch Connections */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_3D); i++ )
 	{
-		for( j = 0; j < (RADIX); j++ )
+		for( j = 0; j < (RADIX_3D); j++ )
 		{
 			NetworkConnect(switches[index]->output_demux[i], switches[index]->output_mux[j], j, i);
 		}
@@ -807,7 +808,7 @@ void intraconnections(int index)
 		oport0 = NewOPort(oportnum++, NPORTPKTS);
 		switches[index]->iport[i] = iport0;
 		switches[index]->oport[i] = oport0;
-		k = ((RADIX) - (CONC) + i);
+		k = ((RADIX_3D) - (CONC) + i);
 		NetworkConnect(switches[index]->iport[i], switches[index]->input_demux[k], 0, 0);
 		NetworkConnect(switches[index]->output_buffer[k], switches[index]->oport[i], 0, 0);
 
