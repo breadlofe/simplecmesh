@@ -94,16 +94,19 @@ int id;
 	int xidentity, diff, pos_skip, neg_skip;
 
 	current_router = id/((2)*(RADIX_3D));
+	printf("\nCurrent %d\n", current_router);
 	cur_xoffset = FindXcord(current_router);
 	cur_yoffset = FindYcord(current_router);
 	cur_zoffset = FindZcord(current_router);
 
 	dest_router = *dest/CONC;
+	printf("Dest %d\n", dest_router);
 	dest_xoffset = FindXcord(dest_router);
 	dest_yoffset = FindYcord(dest_router);
 	dest_zoffset = FindZcord(dest_router);
 
 	src_router = *src/CONC;
+	printf("Src %d\n", src_router);
 	src_xoffset = FindXcord(src_router);
 	src_yoffset = FindYcord(src_router);
 	src_zoffset = FindZcord(dest_router);
@@ -114,7 +117,7 @@ int id;
 	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
 	{
-		demuxret = 4 + *dest%CONC;
+		demuxret = 6 + *dest%CONC;
 	}
 	else if(cur_xoffset != dest_xoffset) // ROUTE x
 	{
@@ -1046,65 +1049,6 @@ int valiant_route( int source, int dest )
 	{
 		tempcpu = RandUniformInt(0, MAX_CPU_3D - 1 );
 	}while( tempcpu == source );
-
-	return tempcpu;
-}
-
-/***************************** Routing Variations  *****************************/
-/************************************ ROMM *************************************/
-// THIS IS UNUSED AND I DONT CARE!
-int romm_route( int source, int dest )
-{
-	int tempcpu;
-	int xsrc, ysrc, xdest, ydest, xtemp, ytemp, xlarge, xsmall, ylarge, ysmall;
-	int set = 0;
-
-	xsrc = FindXcord( source );
-	ysrc = FindYcord( source );
-	xdest = FindXcord( dest );
-	ydest = FindYcord( dest );
-
-	do
-	{
-		tempcpu = RandUniformInt(0, MAX_CPU_3D - 1 );
-
-		/*if( tempcpu != source ) {*/
-		xtemp = FindXcord( tempcpu );
-		ytemp = FindYcord( tempcpu );
-
-		if( xsrc >= xdest )
-		{
-			xlarge = xsrc;
-			xsmall = xdest;
-		}
-		else
-		{
-			xlarge = xdest;
-			xsmall = xsrc;
-		}
-
-		if( (xtemp >= xsmall) && (xtemp <= xlarge) )
-		{
-			if( ysrc >= ydest )
-			{
-				ylarge = ysrc;
-				ysmall = ydest;
-			}
-			else
-			{
-				ylarge = ydest;
-				ysmall = ysrc;
-			}
-
-			if( (ytemp >= ysmall) && (ytemp <= ylarge) )
-			{
-				set = 1;
-				break;
-			}
-		}
-		/*tempcpu = source;
-		}*/
-	}while( set == 0 );
 
 	return tempcpu;
 }

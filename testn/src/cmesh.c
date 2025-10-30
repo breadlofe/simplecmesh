@@ -91,14 +91,17 @@ int id;
 	int xidentity, diff, pos_skip, neg_skip;
 
 	current_router = id/((2)*(RADIX));
+	printf("\nCurrent %d\n", current_router);
 	cur_xoffset = FindXcord(current_router);
 	cur_yoffset = FindYcord(current_router);
 
 	dest_router = *dest/CONC;
+	printf("Dest %d\n", dest_router);
 	dest_xoffset = FindXcord(dest_router);
 	dest_yoffset = FindYcord(dest_router);
 
 	src_router = *src/CONC;
+	printf("Src %d\n", src_router);
 	src_xoffset = FindXcord(src_router);
 	src_yoffset = FindYcord(src_router);
 
