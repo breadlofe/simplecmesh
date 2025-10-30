@@ -1,0 +1,15 @@
+SRC = src
+FLAGS = -g -pg # -g is for GDB, -pg is for gprof
+
+all: cmesh hypercube
+
+cmesh: $(SRC)/cmesh.c ../netsim.o
+	gcc $(FLAGS) -o cmesh $(SRC)/cmesh.c ../netsim.o -lm
+	rm -f cmesh.o
+
+hypercube: $(SRC)/hypercube.c ../netsim.o
+	gcc $(FLAGS) -o hypercube $(SRC)/hypercube.c ../netsim.o -lm
+	rm -f hypercube.o
+
+clean:
+	rm -f *out* *core* *dump* *mesh*

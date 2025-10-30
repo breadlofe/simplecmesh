@@ -1,0 +1,99 @@
+    /*****************************************************************************/
+    /*****************************************************************************/
+    /**                    Copyright 1993 by Rice University                    **/
+    /**                              Houston, Texas                             **/
+    /**                                                                         **/
+    /**                           All Rights Reserved                           **/
+    /**                                                                         **/
+    /**    Permission to use, copy, modify, and distribute this software and    **/
+    /**    its documentation  for  any research  purpose and  without fee is    **/
+    /**    hereby granted, provided that the  above copyright  notice appear    **/
+    /**    in all  copies and  that both  that  copyright  notice  and  this    **/
+    /**    permission  notice appear in supporting  documentation,  and that    **/
+    /**    the name of Rice University not be  used  in  advertising  or  in    **/
+    /**    publicity pertaining to  distribution  of  the  software  without    **/
+    /**    specific, written prior permission.  The inclusion of this  soft-    **/
+    /**    ware  or its  documentation in  any  commercial  product  without    **/
+    /**    specific, written prior permission is prohibited.                    **/
+    /**                                                                         **/
+    /**    RICE  UNIVERSITY  DISCLAIMS  ALL  WARRANTIES WITH  REGARD TO THIS    **/
+    /**    SOFTWARE,  INCLUDING  ALL IMPLIED WARRANTIES  OF  MERCHANTABILITY    **/
+    /**    AND FITNESS.  IN NO EVENT SHALL RICE UNIVERSITY BE LIABLE FOR ANY    **/
+    /**    SPECIAL, INDIRECT  OR CONSEQUENTIAL DAMAGES  OR ANY DAMAGES WHAT-    **/
+    /**    SOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN    **/
+    /**    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS  ACTION, ARISING    **/
+    /**    OUT OF  OR IN  CONNECTION  WITH  THE  USE  OR PERFORMANCE OF THIS    **/
+    /**    SOFTWARE.                                                            **/
+    /*****************************************************************************/
+    /*****************************************************************************/
+
+This software package contains a family of discrete-event simulators based on the C
+programming language.  The current and planned contents of the package are as follows:
+
+Currently available:
+
+	YACSIM - A process-oriented discrete-event simulator implemented as an extension
+	of the C programming language.	This simulator has been used extensively for 
+	several years.  It is stable and relatively free of bugs.  There is a reference 
+	manual included in the package. 
+
+	NETSIM - A general-purpose interconnection network simulator implemented as 
+	an extension of YACSIM.  This simulator is relatively new and has only recently
+	been made available outside Rice.  It has not been used much and almost 
+	certainly contains some bugs, although we have fixed all we know about.  There
+	is a reference manual included in the package.
+
+	DBSIM - A debugging utility for use with any of the simulators.  This program
+	is operational and documented.  There are no known bugs, but it has not been
+	extensively tested.
+
+Not yet available:
+
+	MEMSIM - A cache and shared address space memory simulator implemented as an
+	extension of YACSIM.  This simulator is currently being extensively revised and
+	is not yet avaiable.  Our goal is to have a version we can distribute by the 
+	end of the summer of 1993.
+
+	PARCSIM - A parallel architecture simulator implemented as an extension of 
+	YACSIM and including both YACSIM and MEMSIM.  Parts of PARCSIM are operational
+	but it is not complete and not yet ready for distribution.  We hope to have a
+	version that includes NETSIM, but not MEMSIM, available by the middle of the 
+	summer of 1993.  It would be suitable for simulating distributed memory systems.
+
+The simulators in this package can be freely used for any research purpose subject to 
+the above copyright conditions.  I would appreciate receiving a copy of any report or 
+paper describing reseach results that were obtained using any of the simulators and 
+which references our work. 
+
+If you are using any of these simulators or are interested in using then, I would also 
+like to know about your intended use, any problems you may have with then, and any 
+general comments or suggestions you may have.  If you respond, I will add your name to a 
+list of users and keep you informed by email of any changes or updates that become 
+available.  
+
+All software and documentation is in the file sim.tar.Z.  To unpack it type "uncompress
+sim.tar.Z" to get sim.tar.  Then type "tar xf sim.tar" to get the actual files.  This
+creates a directory called simdir that contains the complete package in several sub-
+directories.  
+
+To install YACSIM, NETSIM, and DBSIM, edit the first part of the makefile in the directory 
+simdir as indicated in the file itself.  Then type "make yacsim" to make YACSIM, 
+"make netsim" to make NETSIM, or "make dbsim" to make DBSIM.  Type "make all" or just "make"
+to make all three.  Since NETSIM is an extension of YACSIM and contains everything in 
+YACSIM, it is not necessary to make both.   You could just make NETSIM and use it for all your
+simulations.  The only reason to make and use YACSIM without the NETSIM extensions is that the
+object files made with YACSIM are a little smaller than those made with NETSIM.
+
+There are some sample YACSIM and NETSIM programs in the directories yacsimdir/testy 
+and yacsimdir/testn.  Their source code is in the src subdirectories and the outputs 
+they produce are in the dataout subdirectories.  To install them, go to directories 
+testn and/or testy and type "make."  Type "runtest" to run them and compare their 
+outputs to the output files in the dataout subdirectories.
+
+
+	J. Robert Jump
+	ECE Dept., Rice University
+	P.O. Box 1892
+	Houston, TX 77251
+	(713) 527-8101
+	email: jrj@rice.edu
