@@ -572,6 +572,7 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
+	printf("Network??: %dx%d mesh with %d VCs\n", XNUMPERDIM, YNUMPERDIM, VC);
 	printf("Sent Packets %d \n", total_send);
 	printf("Received Packets %d \n", total_recv);
 
@@ -832,7 +833,7 @@ int BitReversal(int source)
 }
 
 /***************************** Permutation Pattern *****************************/
-/********************************** Butterfly **********************************/
+/********************************** Butterfly *********************************/
 
 int Butterfly(int source)
 {

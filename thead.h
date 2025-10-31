@@ -10,7 +10,7 @@
 #define CONC					(1)
 #define XNUMPERDIM				(8)
 #define YNUMPERDIM				(8)
-#define ZNUMPERDIM				(2)
+#define ZNUMPERDIM				(4)
 #define MAX_ROUTERS				(XNUMPERDIM*YNUMPERDIM)
 #define MAX_ROUTERS_3D		    (XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM)
 #define MAX_CPU					(MAX_ROUTERS*CONC)

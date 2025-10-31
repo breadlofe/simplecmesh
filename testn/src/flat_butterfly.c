@@ -60,11 +60,11 @@ struct SWITCHSET{
 	int xcord;							/* x co-ordinate of the switch within group	*/
 	int ycord;							/* y co-ordinate of the group				*/
 	int switchid;						/* ID of the switch							*/
-	BUFFER *input_buffer[(VC)*(RADIX_FB)];	/* Input Buffers of the switch (VC)			*/
+	BUFFER *input_buffer[(VC)*(RADIX_FB)];	/* Input Buffers of the swtch (VC)			*/
 	BUFFER *output_buffer[RADIX_FB];		/* Output Buffer of the switch				*/
-	MUX *input_mux[RADIX_FB];				/* Input Multiplexer (Route_MUX)			*/
+	MUX *input_mux[RADIX_FB];				/* Input Multiplexr (Route_MUX)			*/
 	MUX *output_mux[RADIX_FB];				/* Output Multiplexer (Regular_MUX)			*/
-	DEMUX *input_demux[RADIX_FB];			/* Input Demultiplexer (Look-Ahead Router)	*/
+	DEMUX *input_demux[RADIX_FB];			/* Input Demuliplexer (Look-Ahead Router)	*/
 	DEMUX *output_demux[RADIX_FB];			/* Input Demultiplexer (Regular Router)		*/
 	IPORT *iport[CONC];					/* Input port to the node					*/
 	OPORT *oport[CONC];					/* Output port to the node					*/
@@ -146,11 +146,13 @@ int id;
 		{
 			int a = dest_yoffset-cur_yoffset-1;
 			demuxret = (((a%b) + b) % b) + scale;
+			printf("++ROUTING +Y.. cur %d, dest %d, ret %d+++\n", cur_yoffset, dest_yoffset, demuxret);
 		}
 		else if(cur_yoffset > dest_yoffset)
 		{
 			int a = -(cur_yoffset-dest_yoffset);
 			demuxret = (((a%b) + b) % b) + scale;
+			printf("++ROUTING -Y.. cur %d, dest %d, ret %d+++\n", cur_yoffset, dest_yoffset, demuxret);
 		}
 		else
 			YS__errmsg("Routing: Should not get here y\n");
@@ -491,26 +493,29 @@ char** argv;
 	{
 		// This is a TORUS Topology, Does include wrap around links
 		// Do the connections in +x and -x directions
-		// Do the connections in +y and -y directions
+		// Do the connections in +y and -y diections
 		// Do for each switch, mux to buf connections
 		// Directions: 0 = +x
 		// Directions: 1 = -x
 		// Directions: 2 = +y
 		// Directions: 3 = -y
-
+		printf("\n===ROUTER %d====",i);
 		k = 0;
 		// +x dimension FOR ALL ROUTERS IN ROW AHEAD mrgrg
+		printf("\nSwitch %d:", switches[i]->xcord);
 		for(int j = switches[i]->xcord; j < XNUMPERDIM-1; j++)
 		{
+			var = (j+1)%XNUMPERDIM;
 			ax = GetSwitchId(((j+ 1)%(XNUMPERDIM)), switches[i]->ycord);
 			NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
 			DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
 			k++;
-			printf("%d",var);
+			printf(", %d",var);
 		}
-		printf("---x+/n");
+		printf("---x+ \n");
 
 		// -x dimension FOR ALL ROUTERS IN ROW BEHIND
+		printf("\nSwitch %d:", switches[i]->xcord);
 		for(int j = switches[i]->xcord; j > 0; j--)
 		{
 			var = j - 1;
@@ -518,21 +523,24 @@ char** argv;
 			NetworkConnect(switches[i]->output_buffer[k], switches[sx]->input_demux[k], 0, 0);
 			DemuxCreditBuffer(switches[sx]->input_demux[k], switches[i]->output_buffer[k]);
 			k++;
-			printf("%d",var);
+			printf(", %d",var);
 		}
-		printf("---x-/n");
+		printf("---x-\n");
 
 		// +y dimension
+		printf("\nSwitch %d:",switches[i]->ycord);
 		for(int j = switches[i]->ycord; j < YNUMPERDIM-1; j++)
 		{
+			var = (j+1)%YNUMPERDIM;
 			ay = GetSwitchId(switches[i]->xcord, ((j + 1)%(YNUMPERDIM)) );
 			NetworkConnect(switches[i]->output_buffer[k], switches[ay]->input_demux[k], 0, 0);
 			DemuxCreditBuffer(switches[ay]->input_demux[k], switches[i]->output_buffer[k]);
 			k++;
-			printf("%d",var);
+			printf(", %d",var);
 		}
-		printf("---y+/n");
+		printf("---y+\n");
 		// -y dimension
+		printf("\nSwitch %d:",switches[i]->ycord);
 		for(int j = switches[i]->ycord; j > 0; j--)
 		{
 			var = j - 1;
@@ -540,9 +548,9 @@ char** argv;
 			NetworkConnect(switches[i]->output_buffer[k], switches[sy]->input_demux[k], 0, 0);
 			DemuxCreditBuffer(switches[sy]->input_demux[k], switches[i]->output_buffer[k]);
 			k++;			
-			printf("%d",var);
+			printf(", %d",var);
 		}
-		printf("---y-/n");
+		printf("---y-\n");
 		printf("Links made %d\n", k);
 	}
 
@@ -610,6 +618,7 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
+	printf("Network?: %d Node Flattened Butterfly\n", XNUMPERDIM*YNUMPERDIM);
 	printf("Sent Packets %d \n", total_send);
 	printf("Received Packets %d \n", total_recv);
 

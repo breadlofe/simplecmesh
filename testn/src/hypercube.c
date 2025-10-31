@@ -617,7 +617,8 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
-	printf("Sent Packets %d \n", total_send);
+	printf("Network!!: %d Node Hypercube\n", XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM);
+	printf("Sent Packets %d \n",total_send);
 	printf("Received Packets %d \n", total_recv);
 
 	throughput = (total_send*pktsz)/(ncycles*(double)(MAX_CPU_3D));
