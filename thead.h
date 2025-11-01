@@ -8,8 +8,8 @@
 #define BPORTPKTS				1
 
 #define CONC					(1)
-#define XNUMPERDIM				(8)
-#define YNUMPERDIM				(8)
+#define XNUMPERDIM				(3)
+#define YNUMPERDIM				(3)
 #define ZNUMPERDIM				(4)
 #define MAX_ROUTERS				(XNUMPERDIM*YNUMPERDIM)
 #define MAX_ROUTERS_3D		    (XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM)

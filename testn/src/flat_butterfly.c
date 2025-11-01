@@ -114,48 +114,46 @@ int id;
 	//src_col = FindCol(src_router);
 
 	demuxret = 0;
-
+	printf("\n===BEGIN ROUTING===\n");
+	printf("Route current id %d to destination id %d\n", GetSwitchId(cur_xoffset, cur_yoffset), GetSwitchId(dest_xoffset, dest_yoffset));
 	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
 	{
 		demuxret = (RADIX_FB-1) + *dest%CONC;
+		printf("PACKET MADE IT TO DEST!\n");
 	}
 	else if(cur_xoffset != dest_xoffset) // ROUTE x, not in same column, move x
 	{
 		//int a = dest_xoffset-cur_xoffset;
-		int b = XNUMPERDIM - 1;
-		if(cur_xoffset < dest_xoffset)
+		int val = 0;
+		for(int x=0; x < XNUMPERDIM; x++)
 		{
-			int a = dest_xoffset-cur_xoffset-1;
-			demuxret = ((a%b) + b) % b;
+			if(x == cur_xoffset)
+				continue;
+			else if(x == dest_xoffset)
+			{
+				demuxret = val;
+				printf("Hop x: %d\n",demuxret);
+			}
+			else
+				val++;
 		}
-		else if(cur_xoffset > dest_xoffset)
-		{
-			int a = -(cur_xoffset-dest_xoffset);
-			demuxret = ((a%b) + b) % b;
-		}
-		else
-			YS__errmsg("Routing: Should not get here x\n");
-
 	}
 	else if(cur_yoffset != dest_yoffset) // ROUTE y changed for butterfly
 	{
-		int b = YNUMPERDIM - 1;
-		int scale = XNUMPERDIM - 1;
-		if(cur_yoffset < dest_yoffset)
+		int val = XNUMPERDIM-1;
+		for(int y=0; y < YNUMPERDIM; y++)
 		{
-			int a = dest_yoffset-cur_yoffset-1;
-			demuxret = (((a%b) + b) % b) + scale;
-			printf("++ROUTING +Y.. cur %d, dest %d, ret %d+++\n", cur_yoffset, dest_yoffset, demuxret);
+			if(y == cur_yoffset)
+				continue;
+			else if(y == dest_yoffset)
+			{
+				demuxret = val;
+				printf("Hop y: %d\n",demuxret);
+			}
+			else
+				val++;
 		}
-		else if(cur_yoffset > dest_yoffset)
-		{
-			int a = -(cur_yoffset-dest_yoffset);
-			demuxret = (((a%b) + b) % b) + scale;
-			printf("++ROUTING -Y.. cur %d, dest %d, ret %d+++\n", cur_yoffset, dest_yoffset, demuxret);
-		}
-		else
-			YS__errmsg("Routing: Should not get here y\n");
 	}
 	else
 	{
@@ -491,67 +489,45 @@ char** argv;
 	// Interconnect the routers
 	for( i = 0; i < MAX_ROUTERS; i++ )
 	{
-		// This is a TORUS Topology, Does include wrap around links
-		// Do the connections in +x and -x directions
-		// Do the connections in +y and -y diections
+		// This is a Flattened Butterfly Topology
+		// Do the connections in row
+		// Do the connections in column
 		// Do for each switch, mux to buf connections
-		// Directions: 0 = +x
-		// Directions: 1 = -x
-		// Directions: 2 = +y
-		// Directions: 3 = -y
 		printf("\n===ROUTER %d====",i);
 		k = 0;
 		// +x dimension FOR ALL ROUTERS IN ROW AHEAD mrgrg
-		printf("\nSwitch %d:", switches[i]->xcord);
-		for(int j = switches[i]->xcord; j < XNUMPERDIM-1; j++)
+		printf("\n==Switch %d==\n", GetSwitchId(switches[i]->xcord, switches[i]->ycord));
+		for(int j = 0; j < XNUMPERDIM; j++)
 		{
-			var = (j+1)%XNUMPERDIM;
-			ax = GetSwitchId(((j+ 1)%(XNUMPERDIM)), switches[i]->ycord);
-			NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
-			DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
-			k++;
-			printf(", %d",var);
+			if(j == switches[i]->xcord)
+				continue;
+			else
+			{
+				ax = GetSwitchId(j, switches[i]->ycord);
+				NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
+				DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
+				k++;
+				printf("X Connect to: %d\n", ax);
+			}
 		}
-		printf("---x+ \n");
-
-		// -x dimension FOR ALL ROUTERS IN ROW BEHIND
-		printf("\nSwitch %d:", switches[i]->xcord);
-		for(int j = switches[i]->xcord; j > 0; j--)
-		{
-			var = j - 1;
-			sx = GetSwitchId(var, switches[i]->ycord);
-			NetworkConnect(switches[i]->output_buffer[k], switches[sx]->input_demux[k], 0, 0);
-			DemuxCreditBuffer(switches[sx]->input_demux[k], switches[i]->output_buffer[k]);
-			k++;
-			printf(", %d",var);
-		}
-		printf("---x-\n");
+		//printf"---x+ \n");
 
 		// +y dimension
-		printf("\nSwitch %d:",switches[i]->ycord);
-		for(int j = switches[i]->ycord; j < YNUMPERDIM-1; j++)
+		//printf("\nSwitch %d:",switches[i]->ycord);
+		for(int j = 0; j < YNUMPERDIM; j++)
 		{
-			var = (j+1)%YNUMPERDIM;
-			ay = GetSwitchId(switches[i]->xcord, ((j + 1)%(YNUMPERDIM)) );
-			NetworkConnect(switches[i]->output_buffer[k], switches[ay]->input_demux[k], 0, 0);
-			DemuxCreditBuffer(switches[ay]->input_demux[k], switches[i]->output_buffer[k]);
-			k++;
-			printf(", %d",var);
+			if(j == switches[i]->ycord)
+				continue;
+			else
+			{
+				ay = GetSwitchId(switches[i]->xcord, j );
+				NetworkConnect(switches[i]->output_buffer[k], switches[ay]->input_demux[k], 0, 0);
+				DemuxCreditBuffer(switches[ay]->input_demux[k], switches[i]->output_buffer[k]);
+				k++;
+				printf("Y Connect to: %d\n", ay);
+			}
 		}
-		printf("---y+\n");
-		// -y dimension
-		printf("\nSwitch %d:",switches[i]->ycord);
-		for(int j = switches[i]->ycord; j > 0; j--)
-		{
-			var = j - 1;
-			sy = GetSwitchId(switches[i]->xcord, var);
-			NetworkConnect(switches[i]->output_buffer[k], switches[sy]->input_demux[k], 0, 0);
-			DemuxCreditBuffer(switches[sy]->input_demux[k], switches[i]->output_buffer[k]);
-			k++;			
-			printf(", %d",var);
-		}
-		printf("---y-\n");
-		printf("Links made %d\n", k);
+		//printf("---y+\n");
 	}
 
 //********************************** Send and Recieve Events **********************************//
