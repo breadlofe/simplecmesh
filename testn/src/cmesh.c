@@ -234,7 +234,7 @@ void UserEventS()
 							YS__errmsg("Traffic Type Undefined\n");
 							break;
 				}
-
+				printf("\nINDEX FOR SEQNO: %d", index);
 				seqno = index + MAX_CPU * (NPKTS - npkts);
 				measure[index]->send = measure[index]->send + 1;
 				count++;
