@@ -166,7 +166,10 @@ int id;
 	if(demuxret < RADIX_FB-1)	// all the hop directions
 		hoptype[1]++;
 	else 				// OPORT
+	{
 		hoptype[0]++;
+		printf("ACCEPTING PACKET\n");
+	}
 
 	return demuxret;
 }
