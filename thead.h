@@ -7,19 +7,21 @@
 #define NPORTPKTS				1		/* Number of Packets Per Port at the Node	*/
 #define BPORTPKTS				1
 
+#define DIMENSION1				(4)			//power of 2 required to reach max_nodes
 #define CONC					(1)
-#define XNUMPERDIM				(3)
-#define YNUMPERDIM				(3)
+#define XNUMPERDIM				(8)
+#define YNUMPERDIM				(8)
 #define ZNUMPERDIM				(4)
 #define MAX_ROUTERS				(XNUMPERDIM*YNUMPERDIM)
 #define MAX_ROUTERS_3D		    (XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM)
+#define MAX_ROUTERS_HC			(1 << DIMENSION1)
 #define MAX_CPU					(MAX_ROUTERS*CONC)
 #define MAX_CPU_3D				(MAX_ROUTERS_3D*CONC)
+#define MAX_CPU_HC				(MAX_ROUTERS_HC*CONC)
 #define RADIX					(4+CONC)
 #define RADIX_3D				(6+CONC)
+#define RADIX_HC				DIMENSION1
 #define RADIX_FB				(XNUMPERDIM-1 + YNUMPERDIM-1 + CONC)
-#define DIMENSION1				(4)			//power of 2 required to reach max_nodes
-
 /************************************************************************************/
 /******************************* CONSTANTS USED *************************************/
 /************************************************************************************/

@@ -18,7 +18,7 @@ struct MEASURE {
 	int recv;
 	double latency;
 };
-measureptr measure[MAX_CPU];
+measureptr measure[MAX_CPU_HC];
 
 /* Local Variables */
 int pktsz = 0;
@@ -26,7 +26,7 @@ int Traffic = 0;
 double bernoulli_rate = 0.0;
 double poisson_rate = 0.0;
 double ncycles = 0.0;
-double injecttime[MAX_CPU];
+double injecttime[MAX_CPU_HC];
 int count = 0;
 int recvcount = 0;
 double generate_rate = 0.0;
@@ -59,64 +59,65 @@ typedef struct SWITCHSET *switchptr;
 struct SWITCHSET{
 	int xcord;							/* x co-ordinate of the switch within group	*/
 	int ycord;							/* y co-ordinate of the group				*/
+	int zcord;
 	int switchid;						/* ID of the switch							*/
-	BUFFER *input_buffer[(VC)*(RADIX)];	/* Input Buffers of the switch (VC)			*/
-	BUFFER *output_buffer[RADIX];		/* Output Buffer of the switch				*/
-	MUX *input_mux[RADIX];				/* Input Multiplexer (Route_MUX)			*/
-	MUX *output_mux[RADIX];				/* Output Multiplexer (Regular_MUX)			*/
-	DEMUX *input_demux[RADIX];			/* Input Demultiplexer (Look-Ahead Router)	*/
-	DEMUX *output_demux[RADIX];			/* Input Demultiplexer (Regular Router)		*/
+	BUFFER *input_buffer[(VC)*(RADIX_HC)];	/* Input Buffers of the switch (VC)			*/
+	BUFFER *output_buffer[RADIX_HC];		/* Output Buffer of the switch				*/
+	MUX *input_mux[RADIX_HC];				/* Input Multiplexer (Route_MUX)			*/
+	MUX *output_mux[RADIX_HC];				/* Output Multiplexer (Regular_MUX)			*/
+	DEMUX *input_demux[RADIX_HC];			/* Input Demultiplexer (Look-Ahead Router)	*/
+	DEMUX *output_demux[RADIX_HC];			/* Input Demultiplexer (Regular Router)		*/
 	IPORT *iport[CONC];					/* Input port to the node					*/
 	OPORT *oport[CONC];					/* Output port to the node					*/
 };
-switchptr switches[MAX_ROUTERS];
+switchptr switches[MAX_ROUTERS_HC];
 
 /* Local Functions for Torus Network */
 int FindXcord(int );					/* Find the x co-ordinate					*/
 int FindYcord(int );					/* Find the y co-ordinate					*/
+int FindZcord(int );
 void intraconnections(int );		/* Create the switches						*/
-int GetSwitchId(int , int );			/* Get the switch ID from co-ordniates		*/
+int GetSwitchId(int , int , int );			/* Get the switch ID from co-ordniates		*/
 int power(int,int);
 
-//************************************ Routing Function *******************************//
+//*****************minez**************** Routing Function *******************************//
+// Hypercube uses e-cube routing
 int router(src,dest,id)
 int *src;
 int *dest;
 int id;
 {
 	int demuxret, skipcount, k, conc_pair, i;
-	int current_router, cur_xoffset, cur_yoffset;
-	int dest_router, dest_xoffset, dest_yoffset;
-	int src_router, src_xoffset, src_yoffset;
+	int current_router, cur_xoffset, cur_yoffset, cur_zoffset;
+	int dest_router, dest_xoffset, dest_yoffset, dest_zoffset;
+	int src_router, src_xoffset, src_yoffset, src_zoffset;
 	int xidentity, diff, pos_skip, neg_skip;
 
-	current_router = id/((2)*(RADIX));
-	//printf("\nCurrent %d\n", current_router);
+	current_router = id/((2)*(RADIX_HC));
+	printf("\nCurrent %d\n", current_router);
 	cur_xoffset = FindXcord(current_router);
 	cur_yoffset = FindYcord(current_router);
+	cur_zoffset = FindZcord(current_router);
 
 	dest_router = *dest/CONC;
-	//printf("Dest %d\n", dest_router);
+	printf("Dest %d\n", dest_router);
 	dest_xoffset = FindXcord(dest_router);
 	dest_yoffset = FindYcord(dest_router);
+	dest_zoffset = FindZcord(dest_router);
 
 	src_router = *src/CONC;
-	//printf("Src %d\n", src_router);
+	printf("Src %d\n", src_router);
 	src_xoffset = FindXcord(src_router);
 	src_yoffset = FindYcord(src_router);
+	src_zoffset = FindZcord(dest_router);
 
 	demuxret = 0;
 
-	if(current_router == src_router)
-		printf("\n===BEGIN ROUTING===\n");
-	else
-		printf("\n===CONTINUE ROUTING %d===\n", src_router);
-
-	printf("Route current id %d to destination id %d\n", GetSwitchId(cur_xoffset, cur_yoffset), GetSwitchId(dest_xoffset, dest_yoffset));
+	// Try to get e-cube for 3D hypercube... need cur_zoffset
 	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
 	{
-		demuxret = 4 + *dest%CONC;
+		demuxret = 6 + *dest%CONC;
 	}
 	else if(cur_xoffset != dest_xoffset) // ROUTE x
 	{
@@ -137,6 +138,15 @@ int id;
 		else
 			YS__errmsg("Routing: Should not get here y\n");
 	}
+	else if(cur_zoffset != dest_zoffset)
+	{
+		if(cur_zoffset < dest_zoffset)
+			demuxret = 4;
+		else if(cur_zoffset > dest_zoffset)
+			demuxret = 5;
+		else
+			YS__errmsg("Routing: Should not get here z\n");
+	}
 	else
 	{
 		YS__errmsg("Routing: Should not get here\n");
@@ -145,7 +155,7 @@ int id;
 	//printf("Routing %d->%d Cur:%d Port:%d\n", *src, *dest, cur, demuxret );
 
 	// Keep track of Router and Link utiliztion
-	if(demuxret < 4)	// +x, -x, +y, -y
+	if(demuxret < 6)	// +x, -x, +y, -y, +z, -z
 		hoptype[1]++;
 	else 				// OPORT
 		hoptype[0]++;
@@ -197,7 +207,7 @@ void UserEventS()
 				switch(Traffic) {
 					case 0: //Random
 							do {
-								dest = RandUniformInt(0, MAX_CPU - 1 );
+								dest = RandUniformInt(0, MAX_CPU_HC - 1 );
 							}while(dest == index);
 
 
@@ -206,12 +216,12 @@ void UserEventS()
 							retval1 = RandBernoulli(0.25);
 							if( retval1 > 0 ) {
 								do {
-									dest = RandUniformInt(0, MAX_CPU - 1 );
+									dest = RandUniformInt(0, MAX_CPU_HC - 1 );
 								}while(dest == index);
 							}
 							else {
 								do {
-									dest = RandUniformInt(0, MAX_CPU/4);
+									dest = RandUniformInt(0, MAX_CPU_HC/4);
 								}while(dest == index);
 							}
 							break;
@@ -240,8 +250,8 @@ void UserEventS()
 							YS__errmsg("Traffic Type Undefined\n");
 							break;
 				}
-				printf("\nINDEX FOR SEQNO: %d", index);
-				seqno = index + MAX_CPU * (NPKTS - npkts);
+
+				seqno = index + MAX_CPU_HC * (NPKTS - npkts);
 				measure[index]->send = measure[index]->send + 1;
 				count++;
 				npkts--;
@@ -343,7 +353,7 @@ char** argv;
 	EVENT* event;
 	int num_switch, iports, previous, next,i, j, partial_send, total, curswitch, next_switch;
 	char namestr[31];
-	int ax, ay, sx, sy, var, k, m, skip_count, iter;
+	int ax, ay, az, sx, sy, sz, var, k, m, skip_count, iter;
 	int total_send = 0;
 	int total_recv = 0;
 	double total_latency = 0.0;
@@ -404,20 +414,20 @@ char** argv;
 
 //******************************** Print Parameters to Terminal ******************************//
 	  printf("****************BEGIN SIMULATION***************\n");
-      printf("MAXIMUM SIZE = %d\n", MAX_CPU);
+      printf("MAXIMUM SIZE = %d\n", MAX_CPU_HC);
       printf("Packet Size = %d\n", pktsz);
       printf("Network Load = %g\n", network_load);
       printf("Bernoulli Rate = %g\n", bernoulli_rate);
       printf("Cycles to be simulated = %g\n", ncycles);
-	  printf("\n***********CMESH***********\n");
-	  printf("Maximum number of nodes %d\n", MAX_CPU);
-	  printf("Maximum number of Routers %d\n", MAX_ROUTERS);
-	  printf("Radix of the network %d\n", RADIX);
+	  printf("\n***********HYPERCUBE***********\n");
+	  printf("Maximum number of nodes %d\n", MAX_CPU_HC);
+	  printf("Maximum number of Routers %d\n", MAX_ROUTERS_HC);
+	  printf("Radix of the network %d\n", RADIX_HC);
 
     switch(Traffic)
     {
 		case 0:
-				printf("Uniform Traffic Distribution\n");
+				printf("Uniform Traffic Distribution!!\n");
 				break;
 		case 1:
 				printf("Non-Uniform Traffic Distribution\n");
@@ -448,11 +458,13 @@ char** argv;
 	}
 
 //******************************** Initialize Random Variables ******************************//
-  	YacRandomInit();
+  	printf("Initializing random variables...\n");
+	YacRandomInit();
   	SetSysRand(YacRandom);
 
 //********************************** Malloc Measure Struct **********************************//
-  	for( i = 0; i < MAX_CPU; i++ )
+  	printf("Malloc Measure Struct...\n");
+	for( i = 0; i < MAX_CPU_HC; i++ )
   	{
 		measure[i] = malloc(sizeof(MEASURE));
 
@@ -462,60 +474,34 @@ char** argv;
   	}
 
 //********************************** Network Connections **********************************//
-	for( i = 0; i < MAX_ROUTERS; i++ ) // Build the Routers
+	printf("Building routers...\n");
+	for( i = 0; i < MAX_ROUTERS_HC; i++ ) // Build the Routers
 	{
 		intraconnections(i);
 		injecttime[i] = 0.0;
 	}
 
 	// Interconnect the routers
-	for( i = 0; i < MAX_ROUTERS; i++ )
+	printf("Interconnecting the routers...\n");
+	for( i = 0; i < MAX_ROUTERS_HC; i++ )
 	{
-		// This is a TORUS Topology, Does include wrap around links
-		// Do the connections in +x and -x directions
-		// Do the connections in +y and -y directions
-		// Do for each switch, mux to buf connections
-		// Directions: 0 = +x
-		// Directions: 1 = -x
-		// Directions: 2 = +y
-		// Directions: 3 = -y
-
+		// This is a HYPERCUBE Topology, Doesn't include wrap around links
 		k = 0;
-		// +x dimension
-		ax = GetSwitchId(((switches[i]->xcord + 1)%(XNUMPERDIM)), switches[i]->ycord);
-		NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
-		DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
-		k++;
 
-		// -x dimension
-		if( (switches[i]->xcord - 1) < 0 )
-			var = XNUMPERDIM - 1;
-		else
-			var = switches[i]->xcord - 1;
-		sx = GetSwitchId(var, switches[i]->ycord);
-		NetworkConnect(switches[i]->output_buffer[k], switches[sx]->input_demux[k], 0, 0);
-		DemuxCreditBuffer(switches[sx]->input_demux[k], switches[i]->output_buffer[k]);
-		k++;
-
-		// +y dimension
-		ay = GetSwitchId(switches[i]->xcord, ((switches[i]->ycord + 1)%(YNUMPERDIM)) );
-		NetworkConnect(switches[i]->output_buffer[k], switches[ay]->input_demux[k], 0, 0);
-		DemuxCreditBuffer(switches[ay]->input_demux[k], switches[i]->output_buffer[k]);
-		k++;
-
-		// -y dimension
-		if( (switches[i]->ycord - 1) < 0 )
-			var = YNUMPERDIM - 1;
-		else
-			var = switches[i]->ycord - 1;
-		sy = GetSwitchId(switches[i]->xcord, var);
-		NetworkConnect(switches[i]->output_buffer[k], switches[sy]->input_demux[k], 0, 0);
-		DemuxCreditBuffer(switches[sy]->input_demux[k], switches[i]->output_buffer[k]);
-		k++;
+		// connect them.
+		for( j=0; j < MAX_ROUTERS_HC; j++)
+		{
+			ax = GetSwitchId_HC(i,j);
+			NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
+			DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
+			k++;
+		}
+		
+		printf("Done with that.....\n");
 	}
 
 //********************************** Send and Recieve Events **********************************//
-	for( i = 0; i < MAX_ROUTERS; i++)
+	for( i = 0; i < MAX_ROUTERS_HC; i++)
 	{
 		for( j = 0; j < CONC; j++)
 		{
@@ -524,9 +510,10 @@ char** argv;
 			ActivitySetArg(event,switches[i]->iport[j],i*CONC+j);	/* Pass process its id           */
   			ActivitySchedTime(event, 0.0, INDEPENDENT);				/* Schedule process              */
 		}
+		printf("recv events...\n");
 	}
-
-	for( i = 0; i < MAX_ROUTERS; i++)
+	printf("donzeo...\n");
+	for( i = 0; i < MAX_ROUTERS_HC; i++)
 	{
 		for( j = 0; j < CONC; j++)
 		{
@@ -536,6 +523,7 @@ char** argv;
   			ActivitySchedTime(event, 0.0, INDEPENDENT);				/* Schedule process              */
 		}
 	}
+	printf("donzeo2...\n");
 
 //********************************** Latency File Output Initialization **********************************//
 	char filename[75];
@@ -552,6 +540,7 @@ char** argv;
 		YS__errmsg("File did not open latency/mesh\n");
 	}
 	fprintf(fl,"Ave Lat\tMax Lat\tMin Lat\tCycle\n");
+	printf("file stuff...\n");
 
 //********************************** Program Start **********************************//
 	NetworkCollectStats(NETTIME,NOHIST,0.0,0.0);
@@ -559,16 +548,18 @@ char** argv;
 	NetworkCollectStats(OPORTTIME,NOHIST,0.0,0.0);
 	NetworkCollectStats(MOVETIME,NOHIST,0.0,0.0);
 	NetworkCollectStats(LIFETIME,NOHIST,0.0,0.0);
+	printf("net stuff...\n");
+	printf("%d",RADIX_HC);
 
 	DriverRun(0.0);  // Start the simulation, on return simulation is complete
-
+	printf("driver stuff...\n");
 //**************************** Latency Calculation ******************************//
 	total_send = 0;
 	total_recv = 0;
 	total_latency = 0.0;
 	partial_send = 0;
 	partial_latency = 0.0;
-	for( i = 0; i < MAX_CPU; i++ )
+	for( i = 0; i < MAX_CPU_HC; i++ )
 	{
 		total_send = total_send + measure[i]->send;
 		total_recv = total_recv + measure[i]->recv;
@@ -578,11 +569,11 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
-	printf("Network??: %dx%d mesh with %d VCs\n", XNUMPERDIM, YNUMPERDIM, VC);
-	printf("Sent Packets %d \n", total_send);
+	printf("Network!!: %d Node Hypercube\n", XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM);
+	printf("Sent Packets %d \n",total_send);
 	printf("Received Packets %d \n", total_recv);
 
-	throughput = (total_send*pktsz)/(ncycles*(double)(MAX_CPU));
+	throughput = (total_send*pktsz)/(ncycles*(double)(MAX_CPU_HC));
 
 	printf("Achieved Throughput %g\n", throughput);
 	printf("Average Latency %g\n", (total_latency/(double)total_send) );
@@ -621,8 +612,8 @@ char** argv;
 
 	// Print to readable file
 	fprintf(fp, "****************** Start *************************\n");
-	fprintf(fp, "Max CPUs = %d\n", MAX_CPU);
-	fprintf(fp, "Radix = %d\n", RADIX);
+	fprintf(fp, "Max CPUs = %d\n", MAX_CPU_HC);
+	fprintf(fp, "Radix = %d\n", RADIX_HC);
 	fprintf(fp, "CONC = %d\n\n", CONC);
 	fprintf(fp, "Traffic = %d\n", Traffic);
 	fprintf(fp, "Packet Size = %d\n", pktsz);
@@ -642,7 +633,7 @@ char** argv;
 	fprintf(fp, "******************** End *************************\n");
 
 	// Print as list to import in excel
-	fprintf(fp1, "%d\t", MAX_CPU);
+	fprintf(fp1, "%d\t", MAX_CPU_HC);
 	fprintf(fp1, "%d\t", Traffic);
 	fprintf(fp1, "%g\t", network_load);
 	fprintf(fp1, "%g\t", ncycles);
@@ -666,13 +657,13 @@ char** argv;
 //********************************* End File Output *********************************//
 
 	//Free malloc switches struct
-	for(i=0; i<MAX_ROUTERS; i++)
+	for(i=0; i<MAX_ROUTERS_HC; i++)
 	{
 		free(switches[i]);
 	}
 
 	//Free malloc measure struct
-	for( i = 0; i < MAX_CPU; i++ )
+	for( i = 0; i < MAX_CPU_HC; i++ )
   	{
 		free(measure[i]);
   	}
@@ -681,7 +672,7 @@ char** argv;
 }
 
 
-// Router intra-connections (Build a router)
+// Router intra-connections (Build a router) minez
 void intraconnections(int index)
 {
 	BUFFER	*buf0, *buf1;
@@ -699,41 +690,42 @@ void intraconnections(int index)
 	switches[index]->switchid = index;
 	switches[index]->xcord = FindXcord(index);
 	switches[index]->ycord = FindYcord(index);
+	switches[index]->zcord = FindZcord(index);
 
 	//printf("index %d xcord %d, ycord %d\n", index, switches[index].xcord, switches[index].ycord);
 
 	/* Look-Ahead Routing Demuxes */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_HC); i++ )
 	{
 		demux0 = NewDemux(demuxnum++, VC, router, LOOKAHEAD_DEMUX );
 		switches[index]->input_demux[i] = demux0;
 	}
 
 	/* Regular Routing Demuxes (RC) */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_HC); i++ )
 	{
-		demux0 = NewDemux(demuxnum++, RADIX, router, REGULAR_DEMUX );
+		demux0 = NewDemux(demuxnum++, RADIX_HC, router, REGULAR_DEMUX );
 		switches[index]->output_demux[i] = demux0;
 	}
 
 	/* Routing/Virtual Channel Allocating Muxes (VA)  */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_HC); i++ )
 	{
 		mux0 = NewMux(muxnum++, VC, VIRTUAL_ALLOC_MUX );
 		switches[index]->input_mux[i] = mux0;
 	}
 
 	/* Switch Allocating Muxes (SA)  */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_HC); i++ )
 	{
-		mux0 = NewMux(muxnum++, RADIX, SWITCH_ALLOC_MUX );
+		mux0 = NewMux(muxnum++, RADIX_HC, SWITCH_ALLOC_MUX );
 		switches[index]->output_mux[i] = mux0;
 	}
 
 	/***************************************************/
 	/* Intra-Switch Connections: Component Connections */
 	k = 0;
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_HC); i++ )
 	{
 		for( j = 0; j < (VC); j++ )
 		{
@@ -757,9 +749,9 @@ void intraconnections(int index)
 	}
 
 	/* Intra-Switch Connections: Switch Connections */
-	for( i = 0; i < (RADIX); i++ )
+	for( i = 0; i < (RADIX_HC); i++ )
 	{
-		for( j = 0; j < (RADIX); j++ )
+		for( j = 0; j < (RADIX_HC); j++ )
 		{
 			NetworkConnect(switches[index]->output_demux[i], switches[index]->output_mux[j], j, i);
 		}
@@ -772,7 +764,7 @@ void intraconnections(int index)
 		oport0 = NewOPort(oportnum++, NPORTPKTS);
 		switches[index]->iport[i] = iport0;
 		switches[index]->oport[i] = oport0;
-		k = ((RADIX) - (CONC) + i);
+		k = ((RADIX_HC) - (CONC) + i);
 		NetworkConnect(switches[index]->iport[i], switches[index]->input_demux[k], 0, 0);
 		NetworkConnect(switches[index]->output_buffer[k], switches[index]->oport[i], 0, 0);
 
@@ -786,6 +778,7 @@ void intraconnections(int index)
 // Identifies the location of the router offset in the group
 int FindXcord(int identity)
 {
+	// x = identity % WIDTH
 	int xcord = (identity%XNUMPERDIM);
 	return xcord;
 }
@@ -793,13 +786,34 @@ int FindXcord(int identity)
 // Identifies the location of the group offset in the system
 int FindYcord(int identity)
 {
-	int ycord = (identity/XNUMPERDIM);
+	// y = (identity/WIDTH) % HEIGHT
+	int ycord = (identity/XNUMPERDIM) % YNUMPERDIM;
 	return ycord;
 }
 
-int GetSwitchId(int cordx, int cordy)
+//Identifies the location of the Z coordinate in the system
+int FindZcord(int identity)
 {
-    int switchid = ((cordy*XNUMPERDIM) + cordx);
+	// identity / (WIDTH*HEIGHT)
+	int zcord = identity / (XNUMPERDIM * YNUMPERDIM);
+	return zcord;
+}
+
+// 3 dimensional to 1 dimension
+int GetSwitchId(int cordx, int cordy, int cordz)
+{
+    int switchid = ((cordy*XNUMPERDIM) + cordx + (cordz*XNUMPERDIM*YNUMPERDIM));
+    return switchid;
+}
+
+int GetSwitchId_HC(int rnum, int binpos)
+{
+	// convert rnum to binary
+	// get reverse of binary at binpos
+	// make new binary that is rnum but with that reversed bit in that slot
+	// convert that back to an int
+	// return that
+	int switchid = 0;
     return switchid;
 }
 
@@ -839,7 +853,7 @@ int BitReversal(int source)
 }
 
 /***************************** Permutation Pattern *****************************/
-/********************************** Butterfly *********************************/
+/********************************** Butterfly **********************************/
 
 int Butterfly(int source)
 {
@@ -973,15 +987,17 @@ int Neighbor(int source)
 /*************************** Worst-Case Traffic Pattern *************************/
 /*********************************** Tornado ************************************/
 /* Should work for 8-ary, 2-cube networks */
+// FIX ME FOR 3D!!
 int Tornado(int source)
 {
-	int dest, xsrc, ysrc, ydest;
+	int dest, xsrc, ysrc, zsrc, ydest;
 
 	xsrc = FindXcord( source );
 	ysrc = FindYcord( source );
+	zsrc = FindZcord( source );
 
 	ydest = (ysrc + (YNUMPERDIM - 1)/2)%(YNUMPERDIM);
-	dest = GetSwitchId(xsrc, ydest);
+	dest = GetSwitchId(xsrc, ydest, zsrc);
 
 	return dest;
 }
@@ -995,67 +1011,8 @@ int valiant_route( int source, int dest )
 
 	do
 	{
-		tempcpu = RandUniformInt(0, MAX_CPU - 1 );
+		tempcpu = RandUniformInt(0, MAX_CPU_HC - 1 );
 	}while( tempcpu == source );
-
-	return tempcpu;
-}
-
-/***************************** Routing Variations  *****************************/
-/************************************ ROMM *************************************/
-
-int romm_route( int source, int dest )
-{
-	int tempcpu;
-	int xsrc, ysrc, xdest, ydest, xtemp, ytemp, xlarge, xsmall, ylarge, ysmall;
-	int set = 0;
-
-	xsrc = FindXcord( source );
-	ysrc = FindYcord( source );
-	xdest = FindXcord( dest );
-	ydest = FindYcord( dest );
-
-	do
-	{
-		tempcpu = RandUniformInt(0, MAX_CPU - 1 );
-
-		/*if( tempcpu != source ) {*/
-		xtemp = FindXcord( tempcpu );
-		ytemp = FindYcord( tempcpu );
-
-		if( xsrc >= xdest )
-		{
-			xlarge = xsrc;
-			xsmall = xdest;
-		}
-		else
-		{
-			xlarge = xdest;
-			xsmall = xsrc;
-		}
-
-		if( (xtemp >= xsmall) && (xtemp <= xlarge) )
-		{
-			if( ysrc >= ydest )
-			{
-				ylarge = ysrc;
-				ysmall = ydest;
-			}
-			else
-			{
-				ylarge = ydest;
-				ysmall = ysrc;
-			}
-
-			if( (ytemp >= ysmall) && (ytemp <= ylarge) )
-			{
-				set = 1;
-				break;
-			}
-		}
-		/*tempcpu = source;
-		}*/
-	}while( set == 0 );
 
 	return tempcpu;
 }

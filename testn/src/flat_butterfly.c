@@ -114,7 +114,10 @@ int id;
 	//src_col = FindCol(src_router);
 
 	demuxret = 0;
-	printf("\n===BEGIN ROUTING===\n");
+	if(current_router == src_router)
+		printf("\n===BEGIN ROUTING===\n");
+	else
+		printf("\n===CONTINUE ROUTING %d===\n", src_router);
 	printf("Route current id %d to destination id %d\n", GetSwitchId(cur_xoffset, cur_yoffset), GetSwitchId(dest_xoffset, dest_yoffset));
 	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
@@ -139,7 +142,7 @@ int id;
 				val++;
 		}
 	}
-	else if(cur_yoffset != dest_yoffset) // ROUTE y changed for butterfly
+	else if(cur_yoffset != dest_yoffset) // ROUTE y changed for butterfly!
 	{
 		int val = XNUMPERDIM-1;
 		for(int y=0; y < YNUMPERDIM; y++)
@@ -160,15 +163,15 @@ int id;
 		YS__errmsg("Routing: Should not get here\n");
 	}
 
-	//printf("Routing %d->%d Cur:%d Port:%d\n", *src, *dest, cur, demuxret );
+	//printf("Routing %d->%d Cur%d Port:%d\n", *src, *dest, cur, demuxret );
 
-	// Keep track of Router and Link utiliztion
-	if(demuxret < RADIX_FB-1)	// all the hop directions
+	// Keep track of Router and Lin utiliztion
+	if(demuxret < RADIX_FB-1)	// all the ho directions
 		hoptype[1]++;
 	else 				// OPORT
 	{
 		hoptype[0]++;
-		printf("ACCEPTING PACKET %d\n", demuxret);
+		printf("ACCEPTING PACKET FROM %d\n", src_router);
 	}
 
 	return demuxret;
@@ -513,7 +516,7 @@ char** argv;
 				printf("X Connect to: %d\n", ax);
 			}
 		}
-		//printf"---x+ \n");
+		//printf"---x \n");
 
 		// +y dimension
 		//printf("\nSwitch %d:",switches[i]->ycord);
@@ -721,7 +724,7 @@ void intraconnections(int index)
 
 	//printf("index %d xcord %d, ycord %d\n", index, switches[index].xcord, switches[index].ycord);
 
-	/* Look-Ahead Routing Demuxes */
+	/* Look-Ahad Routing Demuxes */
 	for( i = 0; i < (RADIX_FB); i++ )
 	{
 		demux0 = NewDemux(demuxnum++, VC, router, LOOKAHEAD_DEMUX );
