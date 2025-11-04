@@ -617,7 +617,7 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
-	printf("Network!!: %d Node Hypercube\n", XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM);
+	printf("Network!!: %d Node 3D Mesh\n", XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM);
 	printf("Sent Packets %d \n",total_send);
 	printf("Received Packets %d \n", total_recv);
 
@@ -627,7 +627,7 @@ char** argv;
 	printf("Average Latency %g\n", (total_latency/(double)total_send) );
 
 
-	//************* Program wall time print *************//
+	//************ Program wall time print *************//
 	end = clock();
 	time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 	printf("\n\nProgram took: %f seconds\n", time_spent);

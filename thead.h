@@ -9,8 +9,8 @@
 
 #define DIMENSION1				(4)			//power of 2 required to reach max_nodes
 #define CONC					(1)
-#define XNUMPERDIM				(32)
-#define YNUMPERDIM				(32)
+#define XNUMPERDIM				(4)
+#define YNUMPERDIM				(4)
 #define ZNUMPERDIM				(4)
 #define MAX_ROUTERS				(XNUMPERDIM*YNUMPERDIM)
 #define MAX_ROUTERS_3D		    (XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM)
