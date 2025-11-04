@@ -1,0 +1,2 @@
+Ave Lat	Max Lat	Min Lat	Cycle
+47.34	70	44	108

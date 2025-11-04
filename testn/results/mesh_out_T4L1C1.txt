@@ -3,7 +3,7 @@ Max CPUs = 1024
 Radix = 63
 CONC = 1
 
-Traffic = 0
+Traffic = 4
 Packet Size = 4
 Network Load = 0.1
 Cycles to be simulated = 1
@@ -23,5 +23,5 @@ Average Network Hops: 2
 
 OPORT link: 47
 
-Program took: 0.667124 seconds
+Program took: 0.747658 seconds
 ******************** End *************************

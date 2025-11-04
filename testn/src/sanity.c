@@ -60,11 +60,11 @@ struct SWITCHSET{
 	int xcord;							/* x co-ordinate of the switch within group	*/
 	int ycord;							/* y co-ordinate of the group				*/
 	int switchid;						/* ID of the switch							*/
-	BUFFER *input_buffer[(VC)*(RADIX_FB)];	/* Input Buffers of the swtch (VC)			*/
+	BUFFER *input_buffer[(VC)*(RADIX_FB)];	/* Input Buffers of the switch (VC)			*/
 	BUFFER *output_buffer[RADIX_FB];		/* Output Buffer of the switch				*/
-	MUX *input_mux[RADIX_FB];				/* Input Multiplexr (Route_MUX)			*/
+	MUX *input_mux[RADIX_FB];				/* Input Multiplexer (Route_MUX)			*/
 	MUX *output_mux[RADIX_FB];				/* Output Multiplexer (Regular_MUX)			*/
-	DEMUX *input_demux[RADIX_FB];			/* Input Demuliplexer (Look-Ahead Router)	*/
+	DEMUX *input_demux[RADIX_FB];			/* Input Demultiplexer (Look-Ahead Router)	*/
 	DEMUX *output_demux[RADIX_FB];			/* Input Demultiplexer (Regular Router)		*/
 	IPORT *iport[CONC];					/* Input port to the node					*/
 	OPORT *oport[CONC];					/* Output port to the node					*/
@@ -74,8 +74,6 @@ switchptr switches[MAX_ROUTERS];
 /* Local Functions for Torus Network */
 int FindXcord(int );					/* Find the x co-ordinate					*/
 int FindYcord(int );					/* Find the y co-ordinate					*/
-//int FindRow(int );
-//int FindCol(int );
 void intraconnections(int );		/* Create the switches						*/
 int GetSwitchId(int , int );			/* Get the switch ID from co-ordniates		*/
 int power(int,int);
@@ -87,39 +85,34 @@ int *dest;
 int id;
 {
 	int demuxret, skipcount, k, conc_pair, i;
-	int current_router, cur_xoffset, cur_yoffset, cur_row, cur_col;
-	int dest_router, dest_xoffset, dest_yoffset, dest_row, dest_col;
-	int src_router, src_xoffset, src_yoffset, src_row, src_col;
+	int current_router, cur_xoffset, cur_yoffset;
+	int dest_router, dest_xoffset, dest_yoffset;
+	int src_router, src_xoffset, src_yoffset;
 	int xidentity, diff, pos_skip, neg_skip;
 
 	current_router = id/((2)*(RADIX_FB));
 	//printf("\nCurrent %d\n", current_router);
 	cur_xoffset = FindXcord(current_router);
 	cur_yoffset = FindYcord(current_router);
-	//cur_row = FindRow(current_router);
-	//cur_col = FindCol(current_router);
 
 	dest_router = *dest/CONC;
 	//printf("Dest %d\n", dest_router);
 	dest_xoffset = FindXcord(dest_router);
 	dest_yoffset = FindYcord(dest_router);
-	//dest_row = FindRow(dest_router);
-	//dest_col = FindCol(dest_router);
 
 	src_router = *src/CONC;
 	//printf("Src %d\n", src_router);
 	src_xoffset = FindXcord(src_router);
 	src_yoffset = FindYcord(src_router);
-	//src_row = FindRow(src_router);
-	//src_col = FindCol(src_router);
 
 	demuxret = 0;
+
 	if(current_router == src_router)
 		printf("\n===BEGIN ROUTING===\n");
 	else
 		printf("\n===CONTINUE ROUTING %d===\n", src_router);
+
 	printf("Route current id %d to destination id %d\n", GetSwitchId(cur_xoffset, cur_yoffset), GetSwitchId(dest_xoffset, dest_yoffset));
-	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
 	{
 		demuxret = (RADIX_FB-1) + *dest%CONC;
@@ -162,17 +155,13 @@ int id;
 	{
 		YS__errmsg("Routing: Should not get here\n");
 	}
+	//printf("Routig %d->%d Cur:%d Port:%d\n", *src, *dest, cur, demuxret );
 
-	//printf("Routing %d->%d Cur%d Port:%d\n", *src, *dest, cur, demuxret );
-
-	// Keep track of Router and Lin utiliztion
-	if(demuxret < RADIX_FB-1)	// all the ho directions
+	// Keep track of Router and Link utiliztion
+	if(demuxret < RADIX_FB-1)	// +x, -x, +y, -y
 		hoptype[1]++;
 	else 				// OPORT
-	{
 		hoptype[0]++;
-		printf("ACCEPTING PACKET FROM %d\n", src_router);
-	}
 
 	return demuxret;
 }
@@ -220,7 +209,11 @@ void UserEventS()
 				// Choose a Destination Node based on the traffec pattern
 				switch(Traffic) {
 					case 0: //Random
-							dest = Uniform(index);
+							do {
+								dest = RandUniformInt(0, MAX_CPU - 1 );
+							}while(dest == index);
+
+
 							break;
 					case 1: // Non-Random/Hotspot
 							retval1 = RandBernoulli(0.25);
@@ -488,7 +481,7 @@ char** argv;
 		injecttime[i] = 0.0;
 	}
 
-	// Interconnect the routers
+// Interconnect the routers
 	for( i = 0; i < MAX_ROUTERS; i++ )
 	{
 		// This is a Flattened Butterfly Topology
@@ -531,7 +524,6 @@ char** argv;
 		}
 		//printf("---y+\n");
 	}
-
 //********************************** Send and Recieve Events **********************************//
 	for( i = 0; i < MAX_ROUTERS; i++)
 	{
@@ -596,7 +588,7 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
-	printf("Network?: %d Node Flattened Butterfly\n", XNUMPERDIM*YNUMPERDIM);
+	printf("Network??: %dx%d mesh with %d VCs\n", XNUMPERDIM, YNUMPERDIM, VC);
 	printf("Sent Packets %d \n", total_send);
 	printf("Received Packets %d \n", total_recv);
 
@@ -720,7 +712,7 @@ void intraconnections(int index)
 
 	//printf("index %d xcord %d, ycord %d\n", index, switches[index].xcord, switches[index].ycord);
 
-	/* Look-Ahad Routing Demuxes */
+	/* Look-Ahead Routing Demuxes */
 	for( i = 0; i < (RADIX_FB); i++ )
 	{
 		demux0 = NewDemux(demuxnum++, VC, router, LOOKAHEAD_DEMUX );
@@ -857,7 +849,7 @@ int BitReversal(int source)
 }
 
 /***************************** Permutation Pattern *****************************/
-/********************************** Butterfly **********************************/
+/********************************** Butterfly *********************************/
 
 int Butterfly(int source)
 {
@@ -888,14 +880,20 @@ int Butterfly(int source)
 
 int Complement(int source)
 {
-	int dest, xsrc, ysrc, ydest, xdest;
+	int dest, src, i, sbit;
+	int bin_dest[DIMENSION1];
 
-	xsrc = FindXcord( source );
-	ysrc = FindYcord( source );
+	src = source;
+	for( i = 0; i < DIMENSION1; i++ )
+	{
+		sbit = src%2;
+		bin_dest[i] = ( (sbit == 0) ? 1 : 0 );
+		src = src/2;
+	}
 
-	xdest = ((XNUMPERDIM-1) - xsrc)%(XNUMPERDIM);
-	ydest = ((YNUMPERDIM-1) - ysrc)%(YNUMPERDIM);
-	dest = GetSwitchId(xdest, ydest);
+	dest = 0;
+	for( i = 0; i < DIMENSION1; i++ )
+		dest = dest + ((bin_dest[i])*(power(2,i)));
 
 	return dest;
 }
@@ -983,7 +981,7 @@ int Neighbor(int source)
 }
 
 /*************************** Worst-Case Traffic Pattern *************************/
-/*********************************** Tornado ***********************************/
+/*********************************** Tornado ************************************/
 /* Should work for 8-ary, 2-cube networks */
 int Tornado(int source)
 {
@@ -994,20 +992,6 @@ int Tornado(int source)
 
 	ydest = (ysrc + (YNUMPERDIM - 1)/2)%(YNUMPERDIM);
 	dest = GetSwitchId(xsrc, ydest);
-
-	return dest;
-}
-
-int Uniform(int source)
-{
-	int dest, xsrc, ysrc, ydest, xdest;
-
-	xsrc = FindXcord( source );
-	ysrc = FindYcord( source );
-
-	xdest = (xsrc + (XNUMPERDIM - 1)/2)%(XNUMPERDIM);
-	ydest = (ysrc + (YNUMPERDIM - 1)/2)%(YNUMPERDIM);
-	dest = GetSwitchId(xdest, ydest);
 
 	return dest;
 }

@@ -9,8 +9,8 @@
 
 #define DIMENSION1				(4)			//power of 2 required to reach max_nodes
 #define CONC					(1)
-#define XNUMPERDIM				(8)
-#define YNUMPERDIM				(8)
+#define XNUMPERDIM				(32)
+#define YNUMPERDIM				(32)
 #define ZNUMPERDIM				(4)
 #define MAX_ROUTERS				(XNUMPERDIM*YNUMPERDIM)
 #define MAX_ROUTERS_3D		    (XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM)
@@ -151,6 +151,7 @@ int MatrixTranspose(int);
 int PerfectShuffle(int);
 int Neighbor(int);
 int Tornado(int);
+int Uniform(int);
 
 /************************************************************************************/
 /********************************** ROUTING FUNCTIONS *******************************/
