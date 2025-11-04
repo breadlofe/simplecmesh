@@ -100,14 +100,20 @@ int id;
 	dest_router = *dest/CONC;
 
 	src_router = *src/CONC;
-
+	// JUMPMERT
 	demuxret = 0;
-
+	if(current_router == src_router) // Rout to the OPORT
+	{
+		printf("\n==BEGIN ROUTING %d==", src_router);
+	}
+	else
+		printf("\n==CONTINUE ROUTING %d==",src_router);
 	// Try to get e-cube for 3D hypercube... need cur_zoffset
 	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
 	{
-		demuxret = RADIX_HC + *dest%CONC;
+		demuxret = (RADIX_HC-1) + *dest%CONC;
+		printf("\nINJECT PACKET FROM %d INTO %d: (%d)", src_router, dest_router, demuxret);
 	}
 	else
 	{
@@ -115,16 +121,21 @@ int id;
 		//printf("\ndiff %d", diff);
 		// Find LSB of 1 and go to port matching that bin place
 		demuxret = LSB(diff);
-		//printf("\ndiff %d", demuxret);
+		printf("\nRouting %d to %d by hopping on line %d", current_router, dest_router, demuxret);
 	}
 
 	//printf("Routing %d->%d Cur:%d Port:%d\n", *src, *dest, cur, demuxret );
-
 	// Keep track of Router and Link utiliztion
-	if(demuxret < RADIX_HC)	// +x, -x, +y, -y, +z, -z
+	if(demuxret < (RADIX_HC-1))	// +x, -x, +y, -y, +z, -z
+	{
+		printf("\nHOP HOP YAY!");
 		hoptype[1]++;
+	}
 	else 				// OPORT
+	{
+		printf("\nGET INJECTED!\n");
 		hoptype[0]++;
+	}
 
 	return demuxret;
 }
@@ -188,7 +199,7 @@ void UserEventS()
 							else {
 								do {
 									dest = RandUniformInt(0, MAX_CPU_HC/4);
-								}while(dest == index);
+								}while(dest == index); //g
 							}
 							break;
 					case 2:
@@ -379,7 +390,7 @@ char** argv;
   	}
 
 //******************************** Print Parameters to Terminal ******************************//
-	  printf("****************BEGIN SIMULATION***************\n");
+	  printf("****************BEGIN SIMULATION!***************\n");
       printf("MAXIMUM SIZE = %d\n", MAX_CPU_HC);
       printf("Packet Size = %d\n", pktsz);
       printf("Network Load = %g\n", network_load);
@@ -451,7 +462,8 @@ char** argv;
 	printf("Interconnecting the routers...\n");
 	for( i = 0; i < MAX_ROUTERS_HC; i++ )
 	{
-		// This is a HYPERCUBE Topology, Doesn't include wrap around links
+		// This is a HYPERCUBE Topology, Doesn't include wrap around links!
+		// JUMPMEIC
 		k = 0;
 
 		// connect them.
@@ -459,13 +471,13 @@ char** argv;
 		for( j=0; j < DIMENSION1; j++)
 		{
 			ax = GetSwitchId_HC(i,j);
-			printf("\nRoute %d to %d", i, ax);
+			printf("\nRoute %d to %d with link k=%d", i, ax, k);
 			NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
 			DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
 			k++;
 		}
 		
-		printf("Done with that.....\n");
+		printf("\nDone with that.....\n\n");
 	}
 
 //********************************** Send and Recieve Events **********************************//
@@ -478,7 +490,7 @@ char** argv;
 			ActivitySetArg(event,switches[i]->iport[j],i*CONC+j);	/* Pass process its id           */
   			ActivitySchedTime(event, 0.0, INDEPENDENT);				/* Schedule process              */
 		}
-		printf("recv events...\n");
+		//printf(recv event...\n");
 	}
 	printf("donzeo...\n");
 	for( i = 0; i < MAX_ROUTERS_HC; i++)
@@ -537,7 +549,7 @@ char** argv;
 //**************************** Print Stats to Terminal ******************************//
 	printf("End Simulation %g\n", GetSimTime() );
 	printf("******************************************************\n");
-	printf("Network!!: %d Node Hypercube\n", XNUMPERDIM*YNUMPERDIM*ZNUMPERDIM);
+	printf("Network!!: %d Node Hypercube\n", MAX_ROUTERS_HC);
 	printf("Sent Packets %d \n",total_send);
 	printf("Received Packets %d \n", total_recv);
 
@@ -618,7 +630,7 @@ char** argv;
 	fprintf(fp1, "%g\t", time_spent);
 	fprintf(fp1, "\n");
 
-	//close files
+	//close file
 	fclose(fp);
 	fclose(fp1);
 	fclose(fl); // latency file used during sim in UserRecieve()
@@ -743,7 +755,7 @@ void intraconnections(int index)
 }
 
 //**************************** Router Coordinate Funcions ****************************//
-// Identifies the location of the router offset in the group
+// Identifies the location of the router offs!et !in the group
 int FindXcord(int identity)
 {
 	// x = identity % WIDTH
@@ -779,10 +791,12 @@ int GetSwitchId_HC(int rnum, int binpos)
 	// convert rnum to binary
 	char* bin = ToBin(rnum);
 	// get reverse of binary at binpos
-	// make new binary that is rnum but with that reversed bit in that slot
+	// make new binary that is rnum but with that !reversed bit in that slot
 	char* n_bin = Negate(bin, binpos);
 	// convert that back to an int
 	int switchid = ToInt(n_bin);
+	free(bin);
+	free(n_bin);
 	// return that
     return switchid;
 }
@@ -956,19 +970,16 @@ int Neighbor(int source)
 
 /*************************** Worst-Case Traffic Pattern *************************/
 /*********************************** Tornado ************************************/
-/* Should work for 8-ary, 2-cube networks */
+/* Should work for 8-ary, 2-cube !networks */
 // FIX ME FOR 3D!!
 int Tornado(int source)
 {
-	int dest, xsrc, ysrc, zsrc, ydest;
-
-	xsrc = FindXcord( source );
-	ysrc = FindYcord( source );
-	zsrc = FindZcord( source );
-
-	ydest = (ysrc + (YNUMPERDIM - 1)/2)%(YNUMPERDIM);
-	dest = GetSwitchId(xsrc, ydest, zsrc);
-
+	int dest = source;
+	char* tmp = ToBin(dest);
+	tmp = Negate(tmp,0);
+	tmp = Negate(tmp,1);
+	dest = ToInt(tmp);
+	free(tmp);
 	return dest;
 }
 
@@ -1058,5 +1069,6 @@ int LSB(int index)
 			break;
 		}
     }
+	free(bindex);
 	return out;
 }

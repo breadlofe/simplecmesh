@@ -20,7 +20,7 @@
 #define MAX_CPU_HC				(MAX_ROUTERS_HC*CONC)
 #define RADIX					(4+CONC)
 #define RADIX_3D				(6+CONC)
-#define RADIX_HC				DIMENSION1
+#define RADIX_HC				DIMENSION1+1
 #define RADIX_FB				(XNUMPERDIM-1 + YNUMPERDIM-1 + CONC)
 /************************************************************************************/
 /******************************* CONSTANTS USED *************************************/

@@ -1226,7 +1226,7 @@ void YS__HeadEvent()
 			demux_trace = (DEMUX*)(mux->nextmodule);
 			//printf("DEMUX %d %d\n", demux_trace->type, demux_trace->id);
 			mux_trace = (MUX*)(*((demux_trace->nextmodule) + pkt->data.route));
-			//printf("Radix issue at VMUx %d\n", mux_trace->id);
+			printf("\nRadix issue at VMUx %d\n", mux_trace->id);
 			buf_trace = (BUFFER*)(mux_trace->nextmodule);
 
 			//x = fmod(YS__Simtime, flitdelay);

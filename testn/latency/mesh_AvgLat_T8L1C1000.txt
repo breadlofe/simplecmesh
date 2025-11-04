@@ -1,1 +1,4 @@
 Ave Lat	Max Lat	Min Lat	Cycle
+66.71	86	64	327
+69.42	100	64	588
+69.47	99	64	821
