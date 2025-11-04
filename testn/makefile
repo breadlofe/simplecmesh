@@ -1,7 +1,7 @@
 SRC = src
 FLAGS = -g -pg # -g is for GDB, -pg is for gprof
 
-all: cmesh hypercube flat_butterfly sanity
+all: cmesh hypercube flat_butterfly sanity realhypercube
 
 cmesh: $(SRC)/cmesh.c ../netsim.o
 	gcc $(FLAGS) -o cmesh $(SRC)/cmesh.c ../netsim.o -lm
@@ -18,6 +18,10 @@ flat_butterfly: $(SRC)/flat_butterfly.c ../netsim.o
 sanity: $(SRC)/sanity.c ../netsim.o
 	gcc $(FLAGS) -o sanity $(SRC)/sanity.c ../netsim.o -lm
 	rm -f sanity.o
+
+realhypercube: $(SRC)/realhypercube.c ../netsim.o
+	gcc $(FLAGS) -o realhypercube $(SRC)/realhypercube.c ../netsim.o -lm
+	rm -f realhypercube.o
 
 clean:
 	rm -f *out* *core* *dump* *mesh*

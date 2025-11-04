@@ -1079,7 +1079,7 @@ int romm_route( int source, int dest )
 				break;
 			}
 		}
-		/*tempcpu = source;
+		/*temppu = sourc
 		}*/
 	}while( set == 0 );
 

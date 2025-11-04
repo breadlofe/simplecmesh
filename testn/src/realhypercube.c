@@ -9,6 +9,7 @@
 #include <sys/stat.h>	// For folder generating
 #include <sys/types.h>	// For folder generating
 #include <errno.h>		// For folder generating
+#include <string.h>
 
 /* Measurement Structure */
 typedef struct MEASURE MEASURE;
@@ -78,6 +79,7 @@ int FindYcord(int );					/* Find the y co-ordinate					*/
 int FindZcord(int );
 void intraconnections(int );		/* Create the switches						*/
 int GetSwitchId(int , int , int );			/* Get the switch ID from co-ordniates		*/
+int GetSwitchId_HC(int, int);
 int power(int,int);
 
 //*****************minez**************** Routing Function *******************************//
@@ -94,22 +96,10 @@ int id;
 	int xidentity, diff, pos_skip, neg_skip;
 
 	current_router = id/((2)*(RADIX_HC));
-	printf("\nCurrent %d\n", current_router);
-	cur_xoffset = FindXcord(current_router);
-	cur_yoffset = FindYcord(current_router);
-	cur_zoffset = FindZcord(current_router);
 
 	dest_router = *dest/CONC;
-	printf("Dest %d\n", dest_router);
-	dest_xoffset = FindXcord(dest_router);
-	dest_yoffset = FindYcord(dest_router);
-	dest_zoffset = FindZcord(dest_router);
 
 	src_router = *src/CONC;
-	printf("Src %d\n", src_router);
-	src_xoffset = FindXcord(src_router);
-	src_yoffset = FindYcord(src_router);
-	src_zoffset = FindZcord(dest_router);
 
 	demuxret = 0;
 
@@ -117,45 +107,21 @@ int id;
 	// DOR: ROUTES AS A MESH, For Torus need to use the wrap around links
 	if(current_router == dest_router) // Rout to the OPORT
 	{
-		demuxret = 6 + *dest%CONC;
-	}
-	else if(cur_xoffset != dest_xoffset) // ROUTE x
-	{
-		if(cur_xoffset < dest_xoffset)
-			demuxret = 0;
-		else if(cur_xoffset > dest_xoffset)
-			demuxret = 1;
-		else
-			YS__errmsg("Routing: Should not get here x\n");
-
-	}
-	else if(cur_yoffset != dest_yoffset) // ROUTE y
-	{
-		if(cur_yoffset < dest_yoffset)
-			demuxret = 2;
-		else if(cur_yoffset > dest_yoffset)
-			demuxret = 3;
-		else
-			YS__errmsg("Routing: Should not get here y\n");
-	}
-	else if(cur_zoffset != dest_zoffset)
-	{
-		if(cur_zoffset < dest_zoffset)
-			demuxret = 4;
-		else if(cur_zoffset > dest_zoffset)
-			demuxret = 5;
-		else
-			YS__errmsg("Routing: Should not get here z\n");
+		demuxret = RADIX_HC + *dest%CONC;
 	}
 	else
 	{
-		YS__errmsg("Routing: Should not get here\n");
+		int diff = current_router ^ dest_router;
+		//printf("\ndiff %d", diff);
+		// Find LSB of 1 and go to port matching that bin place
+		demuxret = LSB(diff);
+		//printf("\ndiff %d", demuxret);
 	}
 
 	//printf("Routing %d->%d Cur:%d Port:%d\n", *src, *dest, cur, demuxret );
 
 	// Keep track of Router and Link utiliztion
-	if(demuxret < 6)	// +x, -x, +y, -y, +z, -z
+	if(demuxret < RADIX_HC)	// +x, -x, +y, -y, +z, -z
 		hoptype[1]++;
 	else 				// OPORT
 		hoptype[0]++;
@@ -489,9 +455,11 @@ char** argv;
 		k = 0;
 
 		// connect them.
-		for( j=0; j < MAX_ROUTERS_HC; j++)
+		printf("\n====ROUTE SWITCH %d====",i);
+		for( j=0; j < DIMENSION1; j++)
 		{
 			ax = GetSwitchId_HC(i,j);
+			printf("\nRoute %d to %d", i, ax);
 			NetworkConnect(switches[i]->output_buffer[k], switches[ax]->input_demux[k], 0, 0);
 			DemuxCreditBuffer(switches[ax]->input_demux[k], switches[i]->output_buffer[k]);
 			k++;
@@ -809,11 +777,13 @@ int GetSwitchId(int cordx, int cordy, int cordz)
 int GetSwitchId_HC(int rnum, int binpos)
 {
 	// convert rnum to binary
+	char* bin = ToBin(rnum);
 	// get reverse of binary at binpos
 	// make new binary that is rnum but with that reversed bit in that slot
+	char* n_bin = Negate(bin, binpos);
 	// convert that back to an int
+	int switchid = ToInt(n_bin);
 	// return that
-	int switchid = 0;
     return switchid;
 }
 
@@ -1015,4 +985,78 @@ int valiant_route( int source, int dest )
 	}while( tempcpu == source );
 
 	return tempcpu;
+}
+
+char* ToBin(int src)
+{
+    char binary[256];
+
+    int decimal = src;
+
+    int length = 0;
+
+    do
+    {
+        if(decimal % 2 == 0) binary[length] = '0';
+        else binary[length] = '1';
+
+        decimal /= 2;
+        length++;
+    } while (length < DIMENSION1);
+
+    binary[length] = '\0';
+    int middle = length/2;
+
+    char temp;
+
+    for(int i = 0; i < middle; i++)
+    {
+        temp = binary[i];
+        binary[i] = binary[length -i - 1];
+        binary[length-i-1] = temp;
+    }
+    char* out = malloc(256);
+    strcpy(out, binary);
+    return out;
+}
+
+char* Negate(char* bin, int binpos)
+{
+    int flip = bin[binpos] - '0';
+    flip = (flip+1)%2;
+    char insert = (char)(flip+'0');
+    char new_bin[sizeof(bin)];
+    strcpy(new_bin, bin);
+    new_bin[binpos] = insert;
+    char* out = malloc(256);
+    strcpy(out, new_bin);
+    return out;
+}
+
+int ToInt(char* bin)
+{
+    int place = 1;
+    int out = 0;
+    for(int i=(strlen(bin)-1); i>=0; i--)
+    {
+        int tmp = bin[i] - '0';
+        out += tmp*place;
+        place = place << 1;
+    }
+    return out;
+}
+
+int LSB(int index)
+{
+	char* bindex = ToBin(index); // get it?
+    int out = 0;
+    for(int i=(strlen(bindex)-1); i>=0; i--)
+    {
+        if(bindex[i] == '1')
+		{
+			out = i;
+			break;
+		}
+    }
+	return out;
 }

@@ -160,5 +160,10 @@ int Uniform(int);
 int valiant_route( int, int );
 int romm_route( int, int);
 
+char* ToBin(int);
+char* Negate(char*, int);
+int ToInt(char*);
+int LSB(int);
+
 extern int VIRTUAL;
 extern int CURRENT_ROUTE;
